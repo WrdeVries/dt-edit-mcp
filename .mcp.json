@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "dt-edit-mcp": {
+      "type": "stdio",
+      "command": "C:\\Users\\wiebe\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+      "args": ["-m", "dt_edit_mcp.server"],
+      "cwd": "C:\\Users\\wiebe\\Documents\\Darktable CLI MCP\\Darktable_MCP_tool",
+      "env": {
+        "PYTHONPATH": "C:\\Users\\wiebe\\Documents\\Darktable CLI MCP\\Darktable_MCP_tool\\src",
+        "DTMCP_ROOT": "C:\\Users\\wiebe\\Pictures\\dapps"
+      }
+    }
+  }
+}

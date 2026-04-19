@@ -1,0 +1,17 @@
+.venv/
+__pycache__/
+*.pyc
+.dtmcp/
+*.bak.*
+*.ARW
+*.ARW.xmp
+*.xmp
+exports/
+test_*.jpg
+*_bloom.jpg
+Agents*.jpg
+Users*.jpg
+desktop.ini
+.pytest_cache/
+dist/
+*.egg-info/
