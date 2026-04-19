@@ -7,6 +7,7 @@ import subprocess
 import threading
 import warnings
 from dataclasses import dataclass, field
+from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
@@ -47,6 +48,7 @@ class Session:
     snapshots: SnapshotManager
     cache: PreviewCache
     _lock: threading.Lock = field(default_factory=threading.Lock, repr=False)
+    _render_count: int = field(default=0, repr=False)
 
     def info(self) -> dict:
         return {
@@ -183,6 +185,10 @@ class Session:
         snapshot: Optional[str] = None,
         hq: bool = False,
     ) -> Path:
+        self._render_count += 1
+        count = self._render_count
+        ts = datetime.now().strftime("%H:%M:%S")
+
         if snapshot:
             xmp_to_use = self.snapshots.path(snapshot)
             if not xmp_to_use.exists():
@@ -195,20 +201,20 @@ class Session:
         cache_key = self.cache.key(xmp_bytes, width, dt_ver)
 
         cached = self.cache.get(cache_key)
-        if cached:
-            return cached
+        if not cached:
+            tmp_out = self.work_dir / "preview" / f"render_{cache_key}.jpg"
+            tmp_out.parent.mkdir(parents=True, exist_ok=True)
+            darktable_cli.render(
+                raw_path=self.raw_path,
+                xmp_path=xmp_to_use,
+                output_path=tmp_out,
+                width=width,
+                hq=hq,
+            )
+            self.cache.put(cache_key, tmp_out)
 
-        tmp_out = self.work_dir / "preview" / f"render_{cache_key}.jpg"
-        tmp_out.parent.mkdir(parents=True, exist_ok=True)
-
-        darktable_cli.render(
-            raw_path=self.raw_path,
-            xmp_path=xmp_to_use,
-            output_path=tmp_out,
-            width=width,
-            hq=hq,
-        )
-        return self.cache.put(cache_key, tmp_out)
+        base = self.cache.get(cache_key)
+        return _stamp_preview(base, count, ts, self.work_dir)
 
 
 class SessionManager:
@@ -273,6 +279,33 @@ class SessionManager:
     def close(self, session_id: str) -> None:
         with self._lock:
             self._sessions.pop(session_id, None)
+
+
+def _stamp_preview(src: Path, count: int, ts: str, work_dir: Path) -> Path:
+    """Burn render number and timestamp onto a copy of the preview JPEG."""
+    try:
+        from PIL import Image, ImageDraw, ImageFont
+        img = Image.open(src).convert("RGB")
+        draw = ImageDraw.Draw(img, "RGBA")
+        label = f"#{count}  {ts}"
+        font_size = max(18, img.width // 60)
+        try:
+            font = ImageFont.truetype("arial.ttf", font_size)
+        except Exception:
+            font = ImageFont.load_default()
+        bbox = draw.textbbox((0, 0), label, font=font)
+        tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
+        pad = 8
+        x, y = pad, img.height - th - pad * 2
+        draw.rectangle([x - pad, y - pad, x + tw + pad, y + th + pad], fill=(0, 0, 0, 160))
+        draw.text((x, y), label, font=font, fill=(255, 255, 255, 230))
+        stamped_dir = work_dir / "preview_stamped"
+        stamped_dir.mkdir(exist_ok=True)
+        out = stamped_dir / f"preview_{count}_{ts.replace(':', '')}.jpg"
+        img.save(out, "JPEG", quality=92)
+        return out
+    except Exception:
+        return src
 
 
 def _session_id(raw_path: Path) -> str:

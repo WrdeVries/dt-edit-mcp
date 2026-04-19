@@ -48,12 +48,13 @@ input[type=range] {{ width:200px; }}
 </div>
 
 <div id="sbs-view" class="hidden" style="height:calc(100vh - 80px);overflow:auto;">
+  <div style="display:flex;gap:4px;padding:4px;background:#1a1a1a;">
+    <div style="flex:1;text-align:center;padding:4px 8px;background:#2a2a2a;border-radius:4px;font-size:13px;font-weight:bold;">{label_a}</div>
+    <div style="flex:1;text-align:center;padding:4px 8px;background:#2a2a2a;border-radius:4px;font-size:13px;font-weight:bold;">{label_b}</div>
+  </div>
   <div id="side-by-side-view">
     <img src="{src_a}" style="max-width:49.5%;display:inline-block;vertical-align:top;">
     <img src="{src_b}" style="max-width:49.5%;display:inline-block;vertical-align:top;">
-  </div>
-  <div style="padding:8px 16px;display:flex;justify-content:space-around;">
-    <span>{label_a}</span><span>{label_b}</span>
   </div>
 </div>
 
